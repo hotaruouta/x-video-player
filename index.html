@@ -106,9 +106,11 @@
         }
 
         const totalSeconds = (m * 60) + s;
-        let finalUrl = `https://youtu.be/${videoId}`;
+
+        // Xの埋め込みでより安定して動く長いURL形式に変更
+        let finalUrl = `https://www.youtube.com/watch?v=${videoId}`;
         if (totalSeconds > 0) {
-        finalUrl += `?t=${totalSeconds}s`;
+        finalUrl += `&t=${totalSeconds}s`;
         }
 
         const resultArea = document.getElementById('result-area');
@@ -119,7 +121,7 @@
         function copyURL() {
         const text = document.getElementById('result-area').textContent;
         navigator.clipboard.writeText(text).then(() => {
-        alert('コピーしました！これをXに貼り付けてください。');
+        alert('コピーしました。これをXに貼り付けてください。');
         });
         }
     </script>
