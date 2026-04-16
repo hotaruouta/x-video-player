@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Player & URL Generator</title>
+    <title>X用 YouTube時間指定リンク作成</title>
     <style>
         body {
-            margin: 0;
             background-color: #121212;
             color: #fff;
             font-family: sans-serif;
@@ -14,29 +13,15 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            overflow: hidden;
+            margin: 0;
         }
 
-        /* プレイヤー用のスタイル */
-        #player-container {
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-
-        #player {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* フォーム用のスタイル */
         #form-container {
             background: #222;
-            padding: 20px;
+            padding: 25px;
             border-radius: 8px;
             width: 90%;
             max-width: 400px;
-            display: none;
         }
 
         input {
@@ -47,171 +32,95 @@
             background: #333;
             border: 1px solid #555;
             color: white;
+            border-radius: 4px;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 10px;
         }
 
         button {
             width: 100%;
-            padding: 10px;
-            background: #1a73e8;
+            padding: 12px;
+            background: #1da1f2;
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 4px;
             font-size: 16px;
+            margin-top: 10px;
         }
 
             button:hover {
-                background: #1557b0;
+                background: #0c85d0;
             }
 
         .result {
-            margin-top: 15px;
+            margin-top: 20px;
             word-break: break-all;
             background: #000;
             padding: 15px;
             border-radius: 4px;
             cursor: pointer;
             border: 1px solid #444;
+            display: none;
+            text-align: center;
         }
-
-            .result:active {
-                background: #333;
-            }
     </style>
 </head>
 <body>
-
     <div id="form-container">
-        <h3>X用リンク作成ツール</h3>
+        <h3 style="margin-top:0; text-align:center;">X用リンク作成</h3>
         <label>YouTubeのURL</label>
         <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
-        <label>開始時間（秒）</label>
-        <input type="number" id="start-sec" value="0">
-        <label>終了時間（秒）</label>
-        <input type="number" id="end-sec" value="0">
-        <button onclick="generateURL()">URLを作成する</button>
-        <div id="result-area" class="result" style="display:none;" onclick="copyURL()"></div>
-    </div>
 
-    <div id="player-container">
-        <div id="player"></div>
+        <div class="time-inputs">
+            <div style="flex: 1;">
+                <label>分</label>
+                <input type="number" id="start-min" value="0" min="0">
+            </div>
+            <div style="flex: 1;">
+                <label>秒</label>
+                <input type="number" id="start-sec" value="0" min="0" max="59">
+            </div>
+        </div>
+
+        <button onclick="generateURL()">リンクを作成</button>
+        <div id="result-area" class="result" onclick="copyURL()"></div>
     </div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const videoId = params.get('v');
-        const startSec = parseInt(params.get('s')) || 0;
-        const endSec = parseInt(params.get('e')) || 0;
-        const fadeDuration = 2; // フェードにかける時間（秒）
-
-        // URLパラメータの有無で表示を切り替える
-        if (videoId) {
-        document.getElementById('player-container').style.display = 'block';
-        loadYouTubeAPI();
-        } else {
-        document.getElementById('form-container').style.display = 'block';
-        }
-
-        // --- フォーム側の処理 ---
         function generateURL() {
         const urlInput = document.getElementById('yt-url').value;
-        const s = document.getElementById('start-sec').value;
-        const e = document.getElementById('end-sec').value;
+        const m = parseInt(document.getElementById('start-min').value) || 0;
+        const s = parseInt(document.getElementById('start-sec').value) || 0;
 
-        // URLから動画IDを抽出
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = urlInput.match(regExp);
-        const v = (match && match[2].length === 11) ? match[2] : null;
+        const videoId = (match && match[2].length === 11) ? match[2] : null;
 
-        if (!v) {
+        if (!videoId) {
         alert('正しいYouTubeのURLを入力してください。');
         return;
         }
 
-        // 現在のURLをベースにしてパラメータ付きのURLを作成
-        const baseUrl = window.location.origin + window.location.pathname;
-        const finalUrl = baseUrl + "?v=" + v + "&s=" + s + "&e=" + e;
+        const totalSeconds = (m * 60) + s;
+        let finalUrl = `https://youtu.be/${videoId}`;
+        if (totalSeconds > 0) {
+        finalUrl += `?t=${totalSeconds}s`;
+        }
 
         const resultArea = document.getElementById('result-area');
         resultArea.style.display = 'block';
         resultArea.textContent = finalUrl;
         }
 
-        // 作成されたURLをクリックでコピー
         function copyURL() {
         const text = document.getElementById('result-area').textContent;
         navigator.clipboard.writeText(text).then(() => {
-        alert('コピーしました！このURLをXに貼り付けてください。');
+        alert('コピーしました！これをXに貼り付けてください。');
         });
-        }
-
-        // --- プレイヤー側の処理 ---
-        let player;
-        function loadYouTubeAPI() {
-        let tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        let firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        }
-
-        function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-        videoId: videoId,
-        playerVars: {
-        'start': startSec,
-        'autoplay': 1,
-        'controls': 0,
-        'rel': 0,
-        'modestbranding': 1
-        },
-        events: {
-        'onReady': onPlayerReady,
-        'onStateChange': onPlayerStateChange
-        }
-        });
-        }
-
-        function onPlayerReady(event) {
-        event.target.setVolume(0);
-        event.target.playVideo();
-        fadeIn();
-        }
-
-        function fadeIn() {
-        let volume = 0;
-        const interval = setInterval(() => {
-        volume += 5;
-        if (player && typeof player.setVolume === 'function') {
-        player.setVolume(volume);
-        }
-        if (volume >= 100) clearInterval(interval);
-        }, (fadeDuration * 1000) / 20);
-        }
-
-        function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.PLAYING) {
-        const checkEnd = setInterval(() => {
-        const currentTime = player.getCurrentTime();
-        if (endSec > 0 && currentTime >= endSec - fadeDuration) {
-        fadeOut();
-        clearInterval(checkEnd);
-        }
-        }, 500);
-        }
-        }
-
-        function fadeOut() {
-        let volume = 100;
-        const interval = setInterval(() => {
-        volume -= 5;
-        if (player && typeof player.setVolume === 'function') {
-        player.setVolume(volume);
-        }
-        if (volume <= 0) {
-        clearInterval(interval);
-        player.stopVideo();
-        }
-        }, (fadeDuration * 1000) / 20);
         }
     </script>
 </body>
